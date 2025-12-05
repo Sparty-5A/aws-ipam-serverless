@@ -1,0 +1,406 @@
+## AWS serverless cost breakdown ##
+
+1. DynamoDB - 4 Tables
+Free Tier (Permanent):
+
+✅ 25 GB storage (FREE forever)
+✅ 25 RCU/WCU (200M requests/month FREE)
+✅ On-demand pricing (pay per request)
+
+Your Usage (Estimated):
+Subnets Table:      ~1 KB per subnet   × 100 subnets  = 100 KB
+IP Allocations:     ~1 KB per IP       × 1,000 IPs    = 1 MB
+VLANs:              ~500 bytes × 50    = 25 KB
+Audit Log:          ~1 KB × 1,000      = 1 MB
+                                         ────────────
+Total:                                   ~2.2 MB
+
+FREE TIER COVERS: 25 GB (25,000 MB)
+YOUR USAGE:       2.2 MB
+PERCENTAGE USED:  0.009% of free tier
+
+Requests per month:
+Testing/Demo:       ~1,000 requests/month
+Light production:   ~10,000 requests/month
+
+FREE TIER COVERS: 200 MILLION requests/month
+YOUR USAGE:       10,000 requests/month
+PERCENTAGE USED:  0.005% of free tier
+
+DynamoDB Cost: $0/month ✅
+
+2. Lambda Functions - 2 Functions
+Free Tier (Permanent):
+
+✅ 1M requests/month (FREE forever)
+✅ 400,000 GB-seconds compute (FREE forever)
+
+Your Usage (Estimated):
+Lambda Configuration:
+- Memory: 256 MB per function
+- Duration: ~100ms average per request
+
+Monthly requests (testing):
+- API calls: ~500 requests/month
+- Total Lambda invocations: ~1,000/month
+
+Compute seconds:
+- 1,000 requests × 0.1 seconds = 100 seconds
+- 100 seconds × 0.256 GB = 25.6 GB-seconds
+
+FREE TIER COVERS: 400,000 GB-seconds
+YOUR USAGE:       25.6 GB-seconds
+PERCENTAGE USED:  0.006% of free tier
+
+Lambda Cost: $0/month ✅
+
+3. API Gateway
+Free Tier (First 12 Months ONLY):
+
+✅ 1M API calls/month (FREE for 1st year)
+❌ After 12 months: $1.00 per million requests
+
+Your Usage (Estimated):
+Testing/Demo:     ~500 API calls/month
+Light use:        ~5,000 API calls/month
+
+Year 1:  FREE (covered by free tier)
+Year 2+: $0.005/month (5,000 calls × $1/million)
+
+API Gateway Cost:
+
+Year 1: $0/month ✅
+Year 2+: $0.01/month ✅
+
+
+4. CloudWatch Logs
+Free Tier (Permanent):
+
+✅ 5 GB ingestion (FREE forever)
+✅ 5 GB storage (FREE forever)
+
+Your Usage (Estimated):
+Lambda logs:
+- 2 functions × 500 invocations × 1 KB/log = 1 MB/month
+- Retention: 90 days default
+
+FREE TIER COVERS: 5 GB/month
+YOUR USAGE:       1 MB/month
+PERCENTAGE USED:  0.02% of free tier
+
+CloudWatch Cost: $0/month ✅
+
+5. Data Transfer
+Free Tier:
+
+✅ 100 GB outbound/month (FREE first 12 months)
+✅ Inbound: Always FREE
+
+Your Usage (Estimated):
+API responses:
+- 500 requests × 5 KB response = 2.5 MB/month
+
+FREE TIER COVERS: 100 GB/month
+YOUR USAGE:       2.5 MB/month
+PERCENTAGE USED:  0.0025% of free tier
+
+Data Transfer Cost: $0/month ✅
+
+##################################################
+
+Potential Cost Risks & How to Avoid Them
+Risk 1: Accidental High Usage 💸
+What Could Happen:
+
+Someone discovers your API endpoint
+Automated script hits your API 1M times/day
+Massive bill
+
+Prevention:
+# Add to infrastructure/api.py
+
+# Option 1: API Gateway Throttling (FREE!)
+stage = aws.apigatewayv2.Stage(
+    f"{project_name}-api-stage",
+    api_id=api.id,
+    name="prod",
+    auto_deploy=True,
+    
+    # ADD THIS:
+    default_route_settings=aws.apigatewayv2.StageDefaultRouteSettingsArgs(
+        throttling_burst_limit=100,    # Max 100 requests at once
+        throttling_rate_limit=10,      # Max 10 requests/second
+    ),
+)
+
+Cost Protection:
+
+✅ Limits requests to 10/second
+✅ Prevents runaway costs
+✅ Still allows normal testing
+
+
+Risk 2: Forgetting to Delete (destroy)
+What Could Happen:
+
+Deploy and forget
+Small charges accumulate ($0.01/month)
+Over 5 years = $0.60 total
+
+Prevention:
+# Set a reminder to check quarterly
+# OR just destroy when done testing
+
+pulumi destroy
+```
+
+**Cost of forgetting:**
+- After 12 months: $0.01/month = $0.12/year
+- Over 5 years: $0.60 total
+
+**Not a big risk!**
+
+---
+
+### **Risk 3: DynamoDB Massive Data Growth** 💸
+
+**What Could Happen:**
+- Store 100,000 subnets
+- Store 10 million IP allocations
+- Exceed 25 GB free tier
+
+**Calculation:**
+```
+Current: 2.2 MB for 1,000 IPs
+
+To exceed 25 GB free tier:
+25 GB / 2.2 MB per 1,000 = 11.4 million IPs
+
+You'd need to allocate 11 MILLION IPs to pay anything!
+
+Reality Check:
+
+Entire IPv4 internet = 4 billion IPs
+Typical enterprise = 100,000 IPs max
+Your testing = 100 IPs
+
+Cost Risk: Near zero ✅
+
+Risk 4: Lambda Timeout Loops 💸
+What Could Happen:
+
+Bug causes Lambda to run for 15 minutes (max)
+1,000 stuck Lambda executions
+High compute cost
+
+Current Protection:
+# In infrastructure/compute.py
+lambda_function = aws.lambda_.Function(
+    timeout=30,  # ← Kills function after 30 seconds
+    memory_size=256,
+)
+```
+
+**Worst Case Scenario:**
+```
+1,000 stuck functions × 30 seconds × 0.256 GB = 7,680 GB-seconds
+
+FREE TIER COVERS: 400,000 GB-seconds
+WORST CASE USAGE:  7,680 GB-seconds
+PERCENTAGE USED:   1.9% of free tier
+
+COST: Still $0!
+
+Cost Risk: Zero ✅
+
+🛡️ Cost Protection Recommendations
+1. Set Up AWS Billing Alerts (Do This First!)
+# In AWS Console:
+# 1. Go to Billing → Billing preferences
+# 2. Enable "Receive Free Tier Usage Alerts"
+# 3. Set alert threshold: $1.00
+
+# Or via AWS CLI:
+aws budgets create-budget \
+  --account-id YOUR_ACCOUNT_ID \
+  --budget file://budget.json
+  
+budget.json:
+{
+  "BudgetName": "IPAM-System-Budget",
+  "BudgetLimit": {
+    "Amount": "1.00",
+    "Unit": "USD"
+  },
+  "TimeUnit": "MONTHLY",
+  "BudgetType": "COST"
+}
+
+This alerts you if cost exceeds $1/month ✅
+
+2. Add CloudWatch Alarm
+# Add to infrastructure/storage.py
+
+import pulumi_aws as aws
+
+# Create SNS topic for alerts
+alert_topic = aws.sns.Topic(
+    f"{project_name}-cost-alert",
+    name=f"{project_name}-cost-alert",
+)
+
+# Subscribe your email
+aws.sns.TopicSubscription(
+    f"{project_name}-email-alert",
+    topic=alert_topic.arn,
+    protocol="email",
+    endpoint="your-email@example.com",  # ← YOUR EMAIL
+)
+
+# Create alarm for API Gateway requests
+aws.cloudwatch.MetricAlarm(
+    f"{project_name}-high-api-usage",
+    comparison_operator="GreaterThanThreshold",
+    evaluation_periods=1,
+    metric_name="Count",
+    namespace="AWS/ApiGateway",
+    period=3600,  # 1 hour
+    statistic="Sum",
+    threshold=10000,  # Alert if > 10k requests/hour
+    alarm_description="High API usage detected",
+    alarm_actions=[alert_topic.arn],
+)
+
+This emails you if usage spikes ✅
+
+3. Enable Cost Explorer
+# In AWS Console:
+# 1. Go to Cost Explorer
+# 2. Enable Cost Explorer (free)
+# 3. View daily costs
+
+# Check costs:
+aws ce get-cost-and-usage \
+  --time-period Start=2025-12-01,End=2025-12-03 \
+  --granularity DAILY \
+  --metrics BlendedCost
+```
+
+---
+
+## 📊 **Real-World Cost Scenarios**
+
+### **Scenario 1: Testing/Learning (You)**
+```
+Usage:
+- 500 API calls/month
+- 100 subnets
+- 1,000 IPs
+
+Cost: $0.00/month
+Annual: $0.00
+```
+
+---
+
+### **Scenario 2: Light Production Use**
+```
+Usage:
+- 50,000 API calls/month
+- 500 subnets
+- 10,000 IPs
+
+Year 1:  $0.00/month (free tier)
+Year 2+: $0.05/month ($0.60/year)
+```
+
+---
+
+### **Scenario 3: Heavy Production Use**
+```
+Usage:
+- 1 million API calls/month
+- 5,000 subnets
+- 100,000 IPs
+
+DynamoDB:    $0.00 (still within free tier!)
+Lambda:      $0.00 (still within free tier!)
+API Gateway: $1.00/month
+CloudWatch:  $0.00 (still within free tier!)
+
+Total: $1.00/month ($12/year)
+```
+
+---
+
+### **Scenario 4: EXTREME Abuse**
+```
+Someone hammers your API:
+- 100 million requests/month
+- 1,000 requests/second
+
+WITH THROTTLING (recommended):
+- Limited to 10 req/sec = 26M requests/month
+- Cost: ~$26/month
+
+WITHOUT THROTTLING:
+- 100M requests
+- Cost: ~$100/month
+
+THIS IS WHY YOU ADD THROTTLING!
+
+Recommendation
+Deploy with These Safeguards:
+cd ~/Cloud_Networking_Lab/pulumi-ipam-system
+
+# 1. Set AWS billing alert FIRST
+# (Do this in AWS Console)
+
+# 2. Deploy with throttling (already configured!)
+pulumi up
+
+# 3. Test it works
+curl $(pulumi stack output api_endpoint)/subnets
+
+# 4. Use it for portfolio/learning
+
+# 5. Destroy when done (optional)
+pulumi destroy
+
+Cost Control COmmands
+# Check current AWS costs
+aws ce get-cost-and-usage \
+  --time-period Start=2025-12-01,End=2025-12-03 \
+  --granularity DAILY \
+  --metrics BlendedCost
+
+# List all resources (what's deployed)
+pulumi stack --show-urns
+
+# Destroy everything (removes all costs)
+pulumi destroy
+
+# Check free tier usage
+# (Go to AWS Console → Billing → Free Tier)
+
+Summary
+Cost Exposure:
+
+✅ First year: $0.00
+✅ Second year+: $0.01/month
+✅ With billing alerts: Safe
+✅ Can destroy anytime: $0 instantly
+
+Worst Case (No protections):
+
+⚠️ If someone abuses API: ~$100/month
+✅ Add throttling: Max $5/month
+✅ Add billing alerts: Get notified at $1
+
+Recommendation:
+
+✅ Deploy it! Cost risk is minimal
+✅ Set billing alert at $1
+✅ Throttling already configured
+✅ Learn and build portfolio
+✅ Destroy when done (if you want)

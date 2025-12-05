@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ipam-serverless"
+version = "1.0.0"
+description = "Production-ready serverless IP Address Management system with AWS Lambda, DynamoDB, and API Gateway"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+keywords = ["aws", "lambda", "dynamodb", "ipam", "serverless", "api-gateway", "pulumi"]
+
+dependencies = [
+    "pulumi>=3.0.0",
+    "pulumi-aws>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "pylint>=3.0.0",
+    "mypy>=1.5.0",
+    "bandit>=1.7.0",
+    "moto>=4.2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Sparty-5A/ipam-serverless"
+Documentation = "https://github.com/Sparty-5A/ipam-serverless#readme"
+Repository = "https://github.com/Sparty-5A/ipam-serverless"
+Issues = "https://github.com/Sparty-5A/ipam-serverless/issues"
+
+[tool.setuptools]
+packages = ["infrastructure", "lambda_functions"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--verbose",
+    "--cov=lambda_functions",
+    "--cov=infrastructure",
+    "--cov-report=html",
+    "--cov-report=term-missing",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311", "py312", "py313"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  __pycache__
+  | \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.venv
+  | build
+  | dist
+  | test_data
+)/
+'''
+
+[tool.pylint.main]
+disable = [
+    "C0114",
+    "C0115",
+    "C0116",
+    "R0903",
+]
+max-line-length = 100
+ignore-paths = ["test_data"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+exclude = ["test_data"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "venv", "test_data"]
+skips = ["B101"]
+
+[dependency-groups]
+dev = [
+    "bandit>=1.8.6",
+    "black>=25.11.0",
+    "moto>=5.1.18",
+    "mypy>=1.19.0",
+    "pylint>=3.3.9",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.8",
+]

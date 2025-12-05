@@ -1,0 +1,410 @@
+# Save the endpoint
+export API_ENDPOINT=$(pulumi stack output api_endpoint)
+
+# View it
+echo $API_ENDPOINT
+# Output: https://abc123xyz.execute-api.us-east-1.amazonaws.com/prod
+
+##################################
+
+# Should return empty list
+curl $API_ENDPOINT/subnets
+
+# Expected response:
+{
+  "subnets": [],
+  "count": 0
+}
+
+##################################
+
+# Database subnet
+curl -X POST $API_ENDPOINT/subnets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cidr": "10.0.2.0/24",
+    "vlan_id": 20,
+    "site": "datacenter-1",
+    "description": "Production databases"
+  }'
+
+# Application subnet
+curl -X POST $API_ENDPOINT/subnets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cidr": "10.0.3.0/24",
+    "vlan_id": 30,
+    "site": "datacenter-2",
+    "description": "Application servers"
+  }'
+
+# Guest WiFi
+curl -X POST $API_ENDPOINT/subnets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cidr": "192.168.100.0/24",
+    "vlan_id": 100,
+    "site": "office",
+    "description": "Guest WiFi network"
+  }'
+  
+curl $API_ENDPOINT/subnets
+
+#######################################
+
+### Allocate IPs manually ###
+
+# Web server 1
+curl -X POST $API_ENDPOINT/ips \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip_address": "10.0.1.10",
+    "subnet_id": "10.0.1.0_24",
+    "hostname": "web-server-01",
+    "description": "Nginx web server",
+    "status": "active"
+  }'
+
+# Web server 2
+curl -X POST $API_ENDPOINT/ips \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip_address": "10.0.1.11",
+    "subnet_id": "10.0.1.0_24",
+    "hostname": "web-server-02",
+    "description": "Nginx web server",
+    "status": "active"
+  }'
+
+# Load balancer
+curl -X POST $API_ENDPOINT/ips \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip_address": "10.0.1.5",
+    "subnet_id": "10.0.1.0_24",
+    "hostname": "load-balancer-01",
+    "description": "HAProxy load balancer",
+    "status": "active"
+  }'
+  
+### Auto-allocate IPs ###
+
+# Database server (system picks IP)
+curl -X POST $API_ENDPOINT/ips/auto \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subnet_id": "10.0.2.0_24",
+    "hostname": "mysql-primary",
+    "description": "MySQL primary database"
+  }'
+
+# Database replica
+curl -X POST $API_ENDPOINT/ips/auto \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subnet_id": "10.0.2.0_24",
+    "hostname": "mysql-replica-01",
+    "description": "MySQL read replica"
+  }'
+
+# App server
+curl -X POST $API_ENDPOINT/ips/auto \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subnet_id": "10.0.3.0_24",
+    "hostname": "app-server-01",
+    "description": "Node.js application server"
+  }'
+  
+curl $API_ENDPOINT/ips
+
+# Check web subnet (should show 3 IPs allocated)
+curl $API_ENDPOINT/subnets/10.0.1.0_24
+
+##############################################
+
+# Search for "web"
+curl "$API_ENDPOINT/search?q=web"
+
+# Search for "mysql"
+curl "$API_ENDPOINT/search?q=mysql"
+
+# Search for "datacenter-1"
+curl "$API_ENDPOINT/search?q=datacenter-1"
+
+
+# Get only datacenter-1 subnets
+curl "$API_ENDPOINT/subnets?site=datacenter-1"
+
+# Get only VLAN 10
+curl "$API_ENDPOINT/subnets?vlan=10"
+
+
+# Get IPs in specific subnet
+curl "$API_ENDPOINT/ips?subnet_id=10.0.1.0_24"
+
+# Get IPs by status
+curl "$API_ENDPOINT/ips?status=active"
+
+
+# Update web-server-01 IP
+curl -X PUT $API_ENDPOINT/ips/10.0.1.10 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Nginx web server - upgraded to v1.24",
+    "owner": "Platform Team"
+  }'
+
+# Verify update
+curl $API_ENDPOINT/ips/10.0.1.10
+
+
+# Calculate any subnet
+curl "$API_ENDPOINT/subnets/calculate?cidr=172.16.0.0/16"
+curl "$API_ENDPOINT/subnets/calculate?cidr=192.168.1.0/28"
+
+
+# Try to allocate 10.0.1.10 again (should fail)
+curl -X POST $API_ENDPOINT/ips \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip_address": "10.0.1.10",
+    "subnet_id": "10.0.1.0_24",
+    "hostname": "test",
+    "description": "test"
+  }'
+
+
+# Try to create overlapping subnet (should fail)
+curl -X POST $API_ENDPOINT/subnets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cidr": "10.0.1.128/25",
+    "vlan_id": 50,
+    "site": "test"
+  }'
+
+
+# Try to allocate IP outside subnet range
+curl -X POST $API_ENDPOINT/ips \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip_address": "10.0.99.10",
+    "subnet_id": "10.0.1.0_24",
+    "hostname": "test"
+  }'
+
+
+# This should fail (subnet has allocated IPs)
+curl -X DELETE $API_ENDPOINT/subnets/10.0.1.0_24
+```
+
+**Expected:** `{"error": "Cannot delete subnet with X allocated IPs. Release IPs first."}`
+
+---
+
+## 📊 **View Your Data in AWS Console**
+
+## 📊 **View in AWS Console** (Optional but Cool!)
+
+### **1. DynamoDB Tables**
+```
+AWS Console → DynamoDB → Tables
+
+You'll see:
+- ipam-system-subnets
+- ipam-system-ip-allocations
+- ipam-system-vlans
+- ipam-system-audit-log
+
+Click any table → Explore items
+```
+
+### **2. Lambda Functions**
+```
+AWS Console → Lambda → Functions
+
+You'll see:
+- ipam-system-subnet-manager
+- ipam-system-ip-manager
+
+Click → Monitor → View CloudWatch logs
+```
+
+### **3. API Gateway**
+```
+AWS Console → API Gateway → APIs
+
+You'll see:
+- ipam-system-ipam-api
+
+Click → Stages → prod → Invoke URL
+
+### **DynamoDB Tables:**
+```
+AWS Console → DynamoDB → Tables → ipam-system-subnets
+Click "Explore table items"
+```
+
+You should see your 4 subnets with all their data! 🎉
+```
+AWS Console → DynamoDB → Tables → ipam-system-ip-allocations
+Click "Explore table items"
+```
+
+You should see all your IP allocations! 🎉
+
+---
+
+## 📸 **Screenshot Checklist for Portfolio**
+
+### **1. Terminal Screenshots:**
+- ✅ `curl $API_ENDPOINT/subnets` showing JSON response
+- ✅ Creating a subnet successfully
+- ✅ Auto-allocating an IP
+- ✅ Search results
+- ✅ Error handling (duplicate IP)
+
+### **2. AWS Console Screenshots:**
+- ✅ DynamoDB table with actual data
+- ✅ Lambda function showing recent invocations
+- ✅ API Gateway routes
+- ✅ CloudWatch logs showing requests
+
+### **3. Cost Screenshot:**
+- ✅ AWS Billing showing $0.00-0.01
+
+---
+
+## 🎓 **Updated Resume Section**
+```
+IP ADDRESS MANAGEMENT SYSTEM (IPAM)                    December 2025
+Serverless REST API on AWS                             Live Demo: [API endpoint]
+
+Technologies: AWS Lambda, DynamoDB, API Gateway, Python 3.11, Pulumi IaC
+
+- Built production-ready IP Address Management system handling subnet planning
+  and IP allocation through RESTful API with 12 endpoints
+  
+- Deployed 28 AWS resources using Infrastructure as Code (Pulumi), demonstrating
+  DevOps automation and serverless architecture expertise
+  
+- Implemented automated IP allocation algorithm with real-time subnet utilization
+  tracking, preventing IP conflicts and detecting subnet overlaps
+  
+- Leveraged CCNP networking expertise to develop CIDR calculations, subnet 
+  validation, and network address planning algorithms
+  
+- Achieved $0.01/month operational cost through serverless architecture,
+  handling 1M requests/month within AWS Free Tier
+  
+- Designed complete audit trail with 90-day retention in DynamoDB, tracking
+  all subnet and IP allocation changes
+  
+Key Features:
+- Automatic IP allocation with conflict detection
+- Subnet overlap validation and utilization tracking
+- Multi-tenancy support (sites, VLANs)
+- Global search across subnets and IP allocations
+- RESTful API with comprehensive error handling
+
+
+
+Interview Talking Points
+Technical Challenge Question:
+
+"Tell me about a challenging technical problem you solved."
+
+Your Answer:
+
+"While building a serverless IPAM system on AWS, I encountered a routing issue where API Gateway was including the stage name in the path (/prod/subnets), but my Lambda functions were expecting just /subnets. I debugged this by examining CloudWatch logs, identified the path mismatch, and implemented a solution to strip the stage prefix before route matching. This taught me the importance of understanding how AWS services integrate and the value of thorough logging for debugging distributed systems."
+
+
+Architecture Question:
+
+"Why did you choose a serverless architecture?"
+
+Your Answer:
+
+"I chose serverless for several reasons: First, it provides automatic scaling from zero to millions of requests without managing servers. Second, the pay-per-request model reduced costs to $0.01/month for my use case. Third, Lambda's sub-second cold starts were acceptable for an IPAM system. Fourth, DynamoDB's NoSQL structure perfectly fit my access patterns - querying by subnet ID, filtering by VLAN, and searching across allocations. The tradeoff was losing some control over infrastructure, but the operational simplicity and cost savings were worth it."
+
+
+Networking Expertise Question:
+
+"How did your networking background help with this project?"
+
+Your Answer:
+
+"My CCNP background was crucial. I implemented subnet calculations using Python's ipaddress library, validating CIDR notation, detecting subnet overlaps, calculating network ranges, and determining broadcast addresses. I also designed the data model around networking concepts like VLANs, sites, and subnetting hierarchy. Understanding IP addressing fundamentals allowed me to build robust validation - for example, preventing users from allocating IPs outside their subnet range or creating overlapping subnets."
+
+
+
+Congratulations - You've Built a Production-Ready System!
+What You Achieved:
+✅ Fully functional serverless application
+✅ 12 working API endpoints
+✅ Comprehensive error handling
+✅ Real-time utilization tracking
+✅ Complete audit logging
+✅ Multi-tenant support
+✅ Automated IP allocation
+✅ Subnet overlap detection
+✅ Global search functionality
+✅ Cost-optimized architecture ($0.01/month)
+Skills Demonstrated:
+✅ AWS Lambda, DynamoDB, API Gateway
+✅ Python development
+✅ RESTful API design
+✅ Infrastructure as Code (Pulumi)
+✅ Serverless architecture
+✅ Network engineering (CIDR, subnetting)
+✅ Debugging distributed systems
+✅ Cost optimization
+✅ DevOps automation
+
+
+
+
+What's Next?
+This Week:
+
+✅ Add to LinkedIn portfolio
+✅ Update resume
+✅ Take all screenshots
+✅ Write blog post (optional)
+
+Optional Enhancements:
+
+Phase 2: React frontend (S3 + CloudFront)
+Phase 3: API authentication (Cognito)
+Phase 4: CSV import/export
+Phase 5: Integration with NetBox or Infoblox
+
+For Interviews:
+
+✅ Practice explaining the architecture
+✅ Be ready to demo live
+✅ Prepare for technical deep-dives
+✅ Have cost analysis ready
+
+
+
+## 🎓 **Portfolio Documentation**
+
+### **Take Screenshots:**
+1. ✅ Pulumi deployment output
+2. ✅ API Gateway in AWS Console
+3. ✅ DynamoDB tables with data
+4. ✅ Lambda functions
+5. ✅ `curl` commands working
+
+### **Update Your Resume:**
+```
+Projects:
+- Built serverless IP Address Management system using AWS Lambda, 
+  DynamoDB, and API Gateway
+- Implemented RESTful API with automated IP allocation and subnet 
+  utilization tracking
+- Deployed infrastructure as code using Pulumi, reducing deployment 
+  time to under 3 minutes
+- Achieved $0.01/month operational cost by leveraging AWS Free Tier

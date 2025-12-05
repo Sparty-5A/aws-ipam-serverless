@@ -1,0 +1,7 @@
+name: ipam-serverless
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: Production-ready serverless IP Address Management (IPAM) system with AWS Lambda, DynamoDB, and API Gateway
+main: __main__.py
