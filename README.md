@@ -1,13 +1,12 @@
 # 🌐 IPAM Serverless - IP Address Management System
 
-[![Tests](https://github.com/yourusername/ipam-serverless/workflows/Tests/badge.svg)](https://github.com/yourusername/ipam-serverless/actions)
-[![Deploy to Dev](https://github.com/yourusername/ipam-serverless/workflows/Deploy%20to%20Dev/badge.svg)](https://github.com/yourusername/ipam-serverless/actions)
-[![Python 3.11+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://github.com/Sparty-5A/aws-ipam-serverless/workflows/Tests/badge.svg)](https://github.com/Sparty-5A/aws-ipam-serverless/actions)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![AWS](https://img.shields.io/badge/AWS-Lambda%20%7C%20DynamoDB%20%7C%20API%20Gateway-orange)](https://aws.amazon.com/)
 [![Infrastructure as Code](https://img.shields.io/badge/IaC-Pulumi-blueviolet)](https://www.pulumi.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Production-ready serverless IP Address Management (IPAM) system built with AWS Lambda, DynamoDB, and API Gateway. Features automated CI/CD pipeline, comprehensive testing, and infrastructure as code using Pulumi.
+Production-ready serverless IP Address Management (IPAM) system built with AWS Lambda, DynamoDB, and API Gateway. Features automated testing, comprehensive documentation, and infrastructure as code using Pulumi.
 
 ---
 
@@ -37,9 +36,9 @@ Production-ready serverless IP Address Management (IPAM) system built with AWS L
 
 ### DevOps & Infrastructure
 - **Infrastructure as Code**: Full Pulumi deployment for AWS resources
-- **CI/CD Pipeline**: Automated testing and deployment via GitHub Actions
+- **Automated Testing**: GitHub Actions runs tests on every push
 - **Multi-Environment**: Separate dev and production environments
-- **Automated Testing**: Unit and integration test suites with 80%+ coverage
+- **Test Framework**: Unit and integration test suite with pytest
 - **Security Scanning**: Automated security scans with Bandit
 - **Code Quality**: Linting with Pylint, formatting with Black
 
@@ -299,79 +298,39 @@ pytest tests/unit/test_subnet_calculator.py
 pytest tests/unit/test_subnet_calculator.py::test_calculate_subnets
 ```
 
-### Test Coverage
+### Test Framework
 
-Current test coverage: **85%+**
-
-- Unit tests for all calculator functions
+The project includes a comprehensive test suite:
+- Unit tests for calculator functions and validators
 - Integration tests for API endpoints
-- Mock AWS services with `moto`
+- Mock AWS services with `moto` for local testing
 - Parameterized tests for edge cases
 
 ---
 
 ## 🔄 CI/CD Pipeline
 
-### Workflow Overview
+### Current Implementation
 
-```
-Developer Push → GitHub
-      ↓
-  Run Tests (pytest)
-      ↓
-  Security Scan (bandit)
-      ↓
-  Code Quality (black, pylint)
-      ↓
-  Deploy to Dev
-      ↓
-  Integration Tests
-      ↓
-  Create Pull Request
-      ↓
-  Code Review + Approval
-      ↓
-  Deploy to Production
-      ↓
-  Smoke Tests
-      ↓
-  Create Release Tag
-```
+**Automated Testing** via GitHub Actions:
+- ✅ Tests run automatically on every push
+- ✅ Multiple Python versions tested (3.9, 3.10, 3.11, 3.12)
+- ✅ Code quality checks (Black, Pylint)
+- ✅ Security scanning (Bandit)
+- ✅ Test results uploaded as artifacts
+
+**Manual Deployment**:
+- Deployment to AWS is performed manually using Pulumi CLI
+- This allows for controlled, reviewed deployments
+- See [Deployment](#deployment) section below
 
 ### GitHub Actions Workflows
 
 **Test Workflow** (`.github/workflows/test.yml`)
 - Runs on every push and pull request
 - Tests against Python 3.9, 3.10, 3.11, 3.12
-- Uploads coverage reports to Codecov
-
-**Deploy to Dev** (`.github/workflows/deploy-dev.yml`)
-- Triggers on push to `dev` branch or PR to `main`
-- Deploys to development environment
-- Runs smoke tests
-- Comments on PR with deployment URL
-
-**Deploy to Production** (`.github/workflows/deploy-prod.yml`)
-- Triggers on merge to `main` branch
-- Requires manual approval
-- Deploys to production environment
-- Creates release tag
-- Sends notifications
-
-### Setting Up CI/CD
-
-1. **Fork/clone the repository**
-
-2. **Add GitHub Secrets**:
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-   - `PULUMI_ACCESS_TOKEN` (optional, for cloud state)
-
-3. **Push to trigger workflows**:
-   ```bash
-   git push origin dev  # Deploys to dev
-   git push origin main # Deploys to prod (after approval)
-   ```
+- Runs code quality and security checks
+- Uploads test results as artifacts
 
 ---
 
@@ -443,15 +402,6 @@ config:
 
 ---
 
-## 📚 Additional Documentation
-
-- [API Reference](docs/api-reference.md) - Complete API documentation
-- [Architecture Deep Dive](docs/architecture.md) - Detailed architecture explanation
-- [Deployment Guide](docs/deployment.md) - Production deployment checklist
-- [Development Guide](docs/development.md) - Contributing and development workflow
-
----
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please follow these steps:
@@ -483,8 +433,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-**Author**: Scott Penry
-**Email**: scottpenry@comcast.net
+**Author**: Scott Penry  
+**Email**: scottpenry@comcast.net  
+**GitHub**: [@Sparty-5A](https://github.com/Sparty-5A)
 
 ---
 
