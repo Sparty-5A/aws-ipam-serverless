@@ -45,26 +45,17 @@ jobs:
 
     - name: Run Bandit (security scan)
       run: |
-        bandit -r lambda_functions infrastructure -f json -o bandit-report.json || true
         bandit -r lambda_functions infrastructure || true
 
     - name: Run unit tests
       run: |
-        pytest tests/unit --cov=lambda_functions --cov=infrastructure --cov-report=xml --cov-report=term || true
+        pytest tests/unit --cov=lambda_functions --cov=infrastructure || true
 
     - name: Run integration tests
       run: |
-        pytest tests/integration --cov=lambda_functions --cov-report=xml --cov-report=term || true
+        pytest tests/integration --cov=lambda_functions || true
       env:
         AWS_DEFAULT_REGION: us-east-1
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
 
     - name: Upload test results
       if: always()
@@ -73,5 +64,4 @@ jobs:
         name: test-results-${{ matrix.python-version }}
         path: |
           htmlcov/
-          bandit-report.json
           coverage.xml
