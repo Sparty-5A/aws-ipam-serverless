@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/yourusername/ipam-serverless/workflows/Tests/badge.svg)](https://github.com/yourusername/ipam-serverless/actions)
 [![Deploy to Dev](https://github.com/yourusername/ipam-serverless/workflows/Deploy%20to%20Dev/badge.svg)](https://github.com/yourusername/ipam-serverless/actions)
-[![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![AWS](https://img.shields.io/badge/AWS-Lambda%20%7C%20DynamoDB%20%7C%20API%20Gateway-orange)](https://aws.amazon.com/)
 [![Infrastructure as Code](https://img.shields.io/badge/IaC-Pulumi-blueviolet)](https://www.pulumi.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -110,8 +110,8 @@ Production-ready serverless IP Address Management (IPAM) system built with AWS L
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/ipam-serverless.git
-cd ipam-serverless
+git clone https://github.com/Sparty-5A/aws-ipam-serverless.git
+cd aws-ipam-serverless
 
 # Install dependencies
 pip install -e ".[dev]"
@@ -256,7 +256,7 @@ bandit -r lambda_functions infrastructure
 ### Project Structure
 
 ```
-ipam-serverless/
+aws-ipam-serverless/
 ├── infrastructure/          # Pulumi IaC code
 │   ├── api.py              # API Gateway configuration
 │   ├── compute.py          # Lambda function definitions
@@ -410,8 +410,8 @@ Configure per-stack settings in `Pulumi.{stack}.yaml`:
 ```yaml
 config:
   aws:region: us-east-1
-  ipam-serverless:environment: production
-  ipam-serverless:enableDetailedMetrics: "true"
+  aws-ipam-serverless:environment: production
+  aws-ipam-serverless:enableDetailedMetrics: "true"
 ```
 
 ---
@@ -483,10 +483,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-**Author**: Your Name  
-**Email**: your.email@example.com  
-**LinkedIn**: [yourprofile](https://linkedin.com/in/yourprofile)  
-**Portfolio**: [https://yourportfolio.com](https://yourportfolio.com)
+**Author**: Scott Penry
+**Email**: scottpenry@comcast.net
 
 ---
 
